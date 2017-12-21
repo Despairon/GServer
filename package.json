@@ -1,0 +1,24 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "back-end",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.16.2"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Despairon/GServer.git"
+  },
+  "author": "Despairon",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Despairon/GServer/issues"
+  },
+  "homepage": "https://github.com/Despairon/GServer#readme"
+}
