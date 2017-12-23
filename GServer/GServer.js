@@ -1,24 +1,16 @@
-const DEFAULT_PORT = 8081;
-const CFG_FILENAME = 'GServer/config.json';
+const DEFAULT_PORT    = 8081;
+const CFG_FILENAME    = 'GServer/config.json';
+const REQUESTS_MODULE = './requests';
 
-
-var cb = function (request, response)
+function defaultCallback(request, response)
 {
-    response.send("got it");
-    //FIXME: remove after testing
+    response.send("default cb");
+    //TODO: remove after testing
 }
-
-const GetRequests =
-{
-    HOMEPAGE:   {name: 'HOMEPAGE',   url: '/',           callback: cb},
-    ABOUT_US:   {name: 'ABOUT_US',   url: '/about_us',   callback: cb},
-    WHAT_WE_DO: {name: 'WHAT_WE_DO', url: '/what_we_do', callback: cb},
-    CONTACTS:   {name: 'CONTACTS',   url: '/contacts',   callback: cb}
-};
 
 class GServer
 {
-    //<editor-fold desc="Interface members">
+    // <editor-fold desc="Interface members">
 
     constructor(app)
     {
@@ -28,21 +20,20 @@ class GServer
 
     init()
     {
-		let result = true;
+
+		      let result = true;
 		
         var config = this.readJsonFile(CFG_FILENAME);
 
         if (config != null)
             this.setConfig(config);
         else
-		{
+		      {
             console.log('Config read error, using default values');
-			result = false;
-		}
+            result = false;
+		      }
 
-		this.registerGetRequests();
-		
-        // TODO: init: complete
+		      this.registerRequests();
 
         return result;
     }
@@ -55,6 +46,7 @@ class GServer
             let port = srv.address().port;
             console.log(`Server is started at http://${host}:${port}`);
         } );
+
         return true;
     }
 
@@ -90,21 +82,43 @@ class GServer
         }
     }
 	
-	setConfig(config)
-	{
-		this.port = config.port;
-		// TODO: setConfig: complete
-	}
+	   setConfig(config)
+	   {
+		      this.port = config.port;
+	   }
 
-    registerGetRequests()
+    registerRequests()
     {
-        for (let req in GetRequests)
-            this.app.get(GetRequests[req].url, GetRequests[req].callback);
+        const requestsModule = require(REQUESTS_MODULE);
+        let requestTypes     = requestsModule.requestTypes;
+        let requests         = requestsModule.requests;
+
+        for (let req in requests)
+        {
+            switch (requests[req].type)
+            {
+                // TODO: change default callbacks for appropriates
+                case requestTypes.GET:
+                    this.app.get(requests[req].uri, defaultCallback);
+                    break;
+                case requestTypes.POST:
+                    this.app.post(requests[req].uri, defaultCallback);
+                    break;
+                case requestTypes.PUT:
+                    this.app.put(requests[req].uri, defaultCallback);
+                    break;
+                case requestTypes.DELETE:
+                    this.app.delete(requests[req].uri, defaultCallback);
+                    break;
+                default:
+                    console.log(`Unsupported request type: ${requests[req].type}`);
+            }
+        }
     }
 
     // </editor-fold>
 
-}
+};
 
 module.exports = function(app)
 {

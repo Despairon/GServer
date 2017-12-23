@@ -1,7 +1,13 @@
-const SERVER_MODULE = './gserver';
+const SERVER_MODULE      = './gserver';
+const EXPRESS_MODULE     = 'express';
+const BODY_PARSER_MODULE = 'body-parser';
 
-var express = require('express');
-var app     = express();
+var express    = require(EXPRESS_MODULE);
+var bodyParser = require(BODY_PARSER_MODULE);
+var app        = express();
+
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 var server    = require(SERVER_MODULE);
 var serverApp = server(app);
