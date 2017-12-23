@@ -1,8 +1,8 @@
 {
-  "name": "requests",
+  "name": "grequests",
   "version": "1.0.0",
   "description": "List of http requests appliable to GServer",
-  "main": "Requests.js",
+  "main": "GRequests.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

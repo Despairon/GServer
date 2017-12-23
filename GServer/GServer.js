@@ -1,6 +1,6 @@
 const DEFAULT_PORT    = 8081;
 const CFG_FILENAME    = 'GServer/config.json';
-const REQUESTS_MODULE = './requests';
+const REQUESTS_MODULE = './grequests';
 
 function defaultCallback(request, response)
 {
