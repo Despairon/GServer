@@ -1,0 +1,14 @@
+{
+  "name": "gdatabase",
+  "version": "1.0.0",
+  "description": "GServer database interface",
+  "main": "GDataBase.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Despairon",
+  "license": "ISC",
+  "dependencies": {
+    "mongodb": "^3.0.1"
+  }
+}

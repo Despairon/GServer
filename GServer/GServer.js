@@ -1,6 +1,8 @@
 const DEFAULT_PORT    = 8081;
 const CFG_FILENAME    = 'GServer/config.json';
 const REQUESTS_MODULE = './grequests';
+const DATABASE_MODULE = './gdatabase'
+const DATABASE_NAME   = 'GDataBase'
 
 function defaultCallback(request, response)
 {
@@ -16,24 +18,27 @@ class GServer
     {
         this.app  = app;
         this.port = DEFAULT_PORT;
+        this.db   = new require(DATABASE_MODULE)(DATABASE_NAME);
     }
 
     init()
     {
 
 		      let result = true;
-		
+
+		      // set configuration
         var config = this.readJsonFile(CFG_FILENAME);
 
         if (config != null)
             this.setConfig(config);
         else
-		      {
             console.log('Config read error, using default values');
-            result = false;
-		      }
 
+        // register http requests
 		      this.registerRequests();
+
+		      // initialize database
+        this.db.connect();
 
         return result;
     }
@@ -58,7 +63,8 @@ class GServer
 
     deinit()
     {
-        // TODO: deinit: implement
+        // TODO: deinit: complete
+        this.db.disconnect();
         return true;
     }
 

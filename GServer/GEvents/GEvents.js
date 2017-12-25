@@ -16,7 +16,10 @@ class GEventsManager extends EventEmitter
     constructor()
     {
         super();
-        this.on(gEvents.ERROR_OCCURRED, () => console.error('Error event occurred!!!'));
+        this.on(gEvents.ERROR_OCCURRED, (err) =>
+        {
+            return console.error(`Error: ${err}`);
+        });
     }
 
     registerEvent(event, action)
