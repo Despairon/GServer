@@ -14,26 +14,33 @@ class StateMachine
             this.transitions[currentState] = new Object();
         }
 
-        this.transitions[currentState][event] = { nextState: nextState, action: action};
+        this.transitions[currentState][event] = { nextState: nextState, action: action };
     }
 
     execute(event, eventData)
     {
-        if (this.transitions[this.currentState] !== void(0))
+        if (this.transitions !== void(0))
         {
-            if (this.transitions[this.currentState][event] !== void(0))
+            if (this.transitions[this.currentState] !== void(0))
             {
-                this.transitions[this.currentState][event].action(event, eventData);
-                this.currentState = this.transitions[this.currentState][event].nextState;
+                if (this.transitions[this.currentState][event] !== void(0))
+                {
+                    this.transitions[this.currentState][event].action(event, eventData);
+                    this.currentState = this.transitions[this.currentState][event].nextState;
+                }
+                else
+                {
+                    console.log(`Transition from ${this.currentState} by event ${event} not found!`);
+                }
             }
             else
             {
-                console.log(`Transition from ${this.currentState} by event ${event} not found!`);
+                console.log(`NO transitions found for current state: ${this.currentState}`);
             }
         }
         else
         {
-            console.log(`NO transitions found for current state: ${this.currentState}`);
+            console.log('Empty state machine!');
         }
     }
 }
@@ -41,4 +48,4 @@ class StateMachine
 module.exports = function(initialState)
 {
     return new StateMachine(initialState);
-}
+};

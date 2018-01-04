@@ -1,4 +1,6 @@
-const MONGODB_MODULE = 'mongodb'
+const MONGODB_MODULE = 'mongodb';
+
+const MongoDb = require(MONGODB_MODULE);
 
 class GDataBase
 {
@@ -6,7 +8,7 @@ class GDataBase
 
     constructor(dbName)
     {
-        this.mongoClient = require(MONGODB_MODULE).MongoClient;
+        this.mongoClient = MongoDb.MongoClient;
         this.dbName      = dbName;
         this.db          = null;
     }
@@ -20,9 +22,8 @@ class GDataBase
             if (err == null)
             {
                 console.log(`Connected successfully to database: ${this.dbName}`);
+                this.db = db;
             }
-
-            this.db = db;
         });
     }
 
@@ -31,7 +32,7 @@ class GDataBase
         if (this.db != null)
         {
             this.db.close();
-            console.log(`Disconnected successfully from database: ${this.dbName}`);
+            console.log(`Successfully disconnected from database: ${this.dbName}`);
         }
     }
 
@@ -41,4 +42,4 @@ class GDataBase
 module.exports = function(dbName)
 {
     return new GDataBase(dbName);
-}
+};

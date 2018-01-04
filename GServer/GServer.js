@@ -1,109 +1,82 @@
-const DEFAULT_PORT    = 8081;
-const CFG_FILENAME    = 'GServer/config.json';
-const REQUESTS_MODULE = './grequests';
-const DATABASE_MODULE = './gdatabase'
-const DATABASE_NAME   = 'GDataBase'
+const REQUESTS_MODULE       = './grequests';
+const DATABASE_MODULE       = './gdatabase';
+const EVENTS_MODULE         = './gevents';
+const GSTATE_MACHINE_MODULE = './gstatemachine';
 
-function defaultCallback(request, response)
-{
-    response.send("default cb");
-    //TODO: remove after testing
-}
+const GRequests     = require(REQUESTS_MODULE);
+const GDataBase     = require(DATABASE_MODULE);
+const GEvents       = require(EVENTS_MODULE);
+const GStateMachine = require(GSTATE_MACHINE_MODULE);
 
 class GServer
 {
     // <editor-fold desc="Interface members">
 
-    constructor(app)
+    constructor()
     {
-        this.app  = app;
-        this.port = DEFAULT_PORT;
-        this.db   = new require(DATABASE_MODULE)(DATABASE_NAME);
+        this.stateMachine  = GStateMachine;
+        this.events        = GEvents.gEvents;
+        this.eventsManager = GEvents.gEventsManager;
+
+        this.db  = null;
+        this.app = null;
+
+        let _this = this;
+
+        this.eventsManager.registerEvent(this.events.INIT_REQUESTED,   (e,d) => _this.stateMachine.execute(e, d) );
+        this.eventsManager.registerEvent(this.events.START_REQUESTED,  (e,d) => _this.stateMachine.execute(e, d) );
+        this.eventsManager.registerEvent(this.events.STOP_REQUESTED,   (e,d) => _this.stateMachine.execute(e, d) );
+        this.eventsManager.registerEvent(this.events.DEINIT_REQUESTED, (e,d) => _this.stateMachine.execute(e, d) );
     }
 
-    init()
+    init(app, cfgFile, cb)
     {
-
-		      let result = true;
-
-		      // set configuration
-        var config = this.readJsonFile(CFG_FILENAME);
-
-        if (config != null)
-            this.setConfig(config);
-        else
-            console.log('Config read error, using default values');
-
-        // register http requests
-		      this.registerRequests();
-
-		      // initialize database
-        this.db.connect();
-
-        return result;
+        const eventData = {event: this.events.INIT_REQUESTED, eventData: {app: app, cfgFile: cfgFile, cb : cb}};
+        this.eventsManager.raiseEvent(this.events.INIT_REQUESTED, eventData);
     }
 
-    start()
+    start(cb)
     {
-        let srv = this.app.listen(this.port, () =>
-        {
-            let host = srv.address().address;
-            let port = srv.address().port;
-            console.log(`Server is started at http://${host}:${port}`);
-        } );
-
-        return true;
+        const eventData = {event: this.events.START_REQUESTED, eventData: {cb : cb} };
+        this.eventsManager.raiseEvent(this.events.START_REQUESTED, eventData);
     }
 
-    stop()
+    stop(cb)
     {
-        // TODO: stop: implement
-        return true;
+        const eventData = {event: this.events.STOP_REQUESTED, eventData: {cb : cb}};
+        this.eventsManager.raiseEvent(this.events.STOP_REQUESTED, eventData);
     }
 
-    deinit()
+    deinit(cb)
     {
-        // TODO: deinit: complete
-        this.db.disconnect();
-        return true;
+        const eventData = {event: this.events.DEINIT_REQUESTED, eventData: {cb : cb}};
+        this.eventsManager.raiseEvent(this.events.DEINIT_REQUESTED, eventData);
     }
 
     // </editor-fold>
 
     // <editor-fold desc="Class internal logic members">
 
-    readJsonFile(fileName)
+    getDefaultConfig()
     {
-        let fs      = require("fs");
-        let content = fs.readFileSync(fileName);
+        let cfg =
+        {
+            port   : 8081,
+            dbName : "GDataBase"
+        };
 
-        try
-        {
-            return JSON.parse(content);
-        }
-        catch (e)
-        {
-            console.log(`JSON parse error: ${e.name} message:\n${e.message}`);
-            return null;
-        }
+        return cfg;
     }
-	
-	   setConfig(config)
-	   {
-		      this.port = config.port;
-	   }
 
     registerRequests()
     {
-        const requestsModule = require(REQUESTS_MODULE);
-        let requestTypes     = requestsModule.requestTypes;
-        let requests         = requestsModule.requests;
+        let requestTypes = GRequests.requestTypes;
+        let requests     = GRequests.requests;
 
         for (let req in requests)
         {
             switch (requests[req].type)
             {
-                // TODO: change default callbacks for appropriates
                 case requestTypes.GET:
                     this.app.get(requests[req].uri, defaultCallback);
                     break;
@@ -123,10 +96,8 @@ class GServer
     }
 
     // </editor-fold>
-
-};
-
-module.exports = function(app)
-{
-    return new GServer(app);
 }
+
+const server = new GServer();
+
+module.exports.server = server;

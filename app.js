@@ -1,22 +1,36 @@
+const CFG_FILENAME       = 'config.json';
 const SERVER_MODULE      = './gserver';
 const EXPRESS_MODULE     = 'express';
 const BODY_PARSER_MODULE = 'body-parser';
 
-var express    = require(EXPRESS_MODULE);
-var bodyParser = require(BODY_PARSER_MODULE);
-var app        = express();
+let express    = require(EXPRESS_MODULE);
+let bodyParser = require(BODY_PARSER_MODULE);
+let app        = express();
 
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-var server    = require(SERVER_MODULE);
-var serverApp = server(app);
+let serverModule = require(SERVER_MODULE);
+let serverApp    = serverModule.server;
 
-if (serverApp.init())
-    if (serverApp.start())
-        console.log('Server is running...');
-    else
-        console.log('Server start error');
-else
-    console.log('Server initialization error');
+serverApp.init(app, CFG_FILENAME, (initError) =>
+{
+    if (!initError)
+    {
+        serverApp.start( (startError) =>
+        {
+            if (startError)
+            {
+                console.log('Server start error. Deinit requested');
+                serverApp.deinit( ( deinitError ) =>
+                {
+                    if (deinitError)
+                    {
+                        console.log('Critical failure.');
+                    }
+                })
+            }
+        })
+    }
+});
 
