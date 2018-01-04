@@ -13,7 +13,11 @@ const gEvents =
     GET_ABOUT_US_REQUESTED:   'GET_ABOUT_US_REQUESTED',
     GET_WHAT_WE_DO_REQUESTED: 'GET_WHAT_WE_DO_REQUESTED',
     GET_CONTACTS_REQUESTED:   'GET_CONTACTS_REQUESTED',
-    GET_IMAGE_REQUESTED:      'GET_IMAGE_REQUESTED'
+    GET_IMAGE_REQUESTED:      'GET_IMAGE_REQUESTED',
+    GET_REQUEST_RECEIVED:     'GET_REQUEST_RECEIVED',
+    POST_REQUEST_RECEIVED:    'POST_REQUEST_RECEIVED',
+    PUT_REQUEST_RECEIVED:     'PUT_REQUEST_RECEIVED',
+    DELETE_REQUEST_RECEIVED:  'DELETE_REQUEST_RECEIVED'
 };
 
 class GEventsManager extends EventEmitter
@@ -29,19 +33,17 @@ class GEventsManager extends EventEmitter
 
     registerEvent(event, action)
     {
-        this.on(event, action);
+        super.on(event, action);
     }
 
     raiseEvent(event, eventData)
     {
-        this.emit(event, eventData);
+        super.emit(event, eventData);
     }
 }
-
-const gEventsManager = new GEventsManager();
 
 module.exports =
 {
     gEvents        : gEvents,
-    gEventsManager : gEventsManager
+    GEventsManager : function () { return new GEventsManager() }
 };

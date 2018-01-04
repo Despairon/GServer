@@ -21,16 +21,20 @@ serverApp.init(app, CFG_FILENAME, (initError) =>
         {
             if (startError)
             {
-                console.log('Server start error. Deinit requested');
-                serverApp.deinit( ( deinitError ) =>
+                console.log('Server start error. DeInit requested');
+                serverApp.deInit( ( deInitError ) =>
                 {
-                    if (deinitError)
+                    if (deInitError)
                     {
                         console.log('Critical failure.');
                     }
                 })
             }
         })
+    }
+    else
+    {
+        console.log('Server initialization error!');
     }
 });
 

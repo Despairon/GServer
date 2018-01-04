@@ -13,7 +13,7 @@ class GDataBase
         this.db          = null;
     }
 
-    connect()
+    connect(cb)
     {
         let url = `mongodb://localhost:27017/${this.dbName}`;
 
@@ -24,6 +24,12 @@ class GDataBase
                 console.log(`Connected successfully to database: ${this.dbName}`);
                 this.db = db;
             }
+            else
+            {
+                console.log(`Database ${this.dbName} connection error!`);
+            }
+
+            cb(err);
         });
     }
 

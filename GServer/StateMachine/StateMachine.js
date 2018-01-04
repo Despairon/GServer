@@ -17,15 +17,18 @@ class StateMachine
         this.transitions[currentState][event] = { nextState: nextState, action: action };
     }
 
-    execute(event, eventData)
+    execute(eventData)
     {
+        let event = eventData.event;
+        let data  = eventData.eventData;
+
         if (this.transitions !== void(0))
         {
             if (this.transitions[this.currentState] !== void(0))
             {
                 if (this.transitions[this.currentState][event] !== void(0))
                 {
-                    this.transitions[this.currentState][event].action(event, eventData);
+                    this.transitions[this.currentState][event].action(data);
                     this.currentState = this.transitions[this.currentState][event].nextState;
                 }
                 else
