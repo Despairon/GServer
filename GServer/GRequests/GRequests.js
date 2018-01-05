@@ -4,10 +4,10 @@ const events = require(EVENTS_MODULE).gEvents;
 
 const requestTypes =
 {
-    GET:    "GET",
-    POST:   "POST",
-    PUT:    "PUT",
-    DELETE: "DELETE"
+    GET:    "get",
+    POST:   "post",
+    PUT:    "put",
+    DELETE: "delete"
 };
 
 const requests =
@@ -18,7 +18,7 @@ const requests =
     get_about_us:   {url: '/about_us',    type: requestTypes.GET, event: events.GET_ABOUT_US_REQUESTED},
     get_what_we_do: {url: '/what_we_do',  type: requestTypes.GET, event: events.GET_WHAT_WE_DO_REQUESTED},
     get_contacts:   {url: '/contacts',    type: requestTypes.GET, event: events.GET_CONTACTS_REQUESTED},
-    get_image:      {url: '/img?id=id',   type: requestTypes.GET, event: events.GET_IMAGE_REQUESTED}
+    get_image:      {url: '/img',         type: requestTypes.GET, event: events.GET_IMAGE_REQUESTED}
 
     // </editor-fold>
 

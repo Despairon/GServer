@@ -209,7 +209,7 @@ class GServer
 
     processGetImage(data)
     {
-        data.res.send(`Image requested: ${data.req.params.id}`);
+        data.res.send(`Image requested: ${data.req.query.id}`);
         // TODO: processGetImage: implement
     }
 
@@ -254,26 +254,25 @@ class GServer
 
         let _this = this;
 
-        // register middleware
-        this.app.use(function (req, res, next)
+        for (let _req in requests)
         {
-            for (let _req in requests)
+            if (requests.hasOwnProperty(_req))
             {
-                // TODO: need fixes
-                if (requests.hasOwnProperty(_req))
+                if (_this.app[requests[_req].type] !== void(0))
                 {
-                    if ((requests[_req].url  === req.originalUrl)
-                    &&  (requests[_req].type === req.method))
+                    _this.app[requests[_req].type](requests[_req].url, (req, res) =>
                     {
-                        const event = requests[_req].event;
+                        const event     = requests[_req].event;
                         const eventData = {event: event, eventData: {req: req, res: res}};
                         _this.eventsManager.raiseEvent(event, eventData);
-                    }
+                    });
+                }
+                else
+                {
+                    console.log(`Unsupported request type: ${requests[_req].type}`);
                 }
             }
-
-            next();
-        });
+        }
 
         // TODO: register default ' 404 not found' response to other requests
     }
