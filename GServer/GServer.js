@@ -76,7 +76,6 @@ class GServer
 
     fillTransitions()
     {
-        // TODO: fillTransitions: complete implementation
         let _this = this;
 
         let transition = function(currState, event, nextState, cb)
@@ -85,21 +84,25 @@ class GServer
         };
 
         // transitions from UNINITIALIZED
-        transition(States.UNINITIALIZED, this.events.INIT_REQUESTED,       States.UNINITIALIZED,  (data) => _this.serverInit(data));
-        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_OK,     States.INITIALIZED,    (data) => _this.returnInitResult(data));
-        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_ERR,    States.UNINITIALIZED,  (data) => _this.returnInitResult(data));
+        transition(States.UNINITIALIZED, this.events.INIT_REQUESTED,           States.UNINITIALIZED,  (data) => _this.serverInit(data));
+        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_OK,         States.INITIALIZED,    (data) => _this.returnInitResult(data));
+        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_ERR,        States.UNINITIALIZED,  (data) => _this.returnInitResult(data));
 
         // transitions from INITIALIZED
-        transition(States.INITIALIZED,   this.events.START_REQUESTED,      States.RUNNING,        (data) => _this.serverStart(data));
-        transition(States.INITIALIZED,   this.events.DEINIT_REQUESTED,     States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
+        transition(States.INITIALIZED,   this.events.START_REQUESTED,          States.RUNNING,        (data) => _this.serverStart(data));
+        transition(States.INITIALIZED,   this.events.DEINIT_REQUESTED,         States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
 
         // transitions from RUNNING
-        transition(States.RUNNING,       this.events.STOP_REQUESTED,       States.STOPPED,        (data) => _this.serverStop(data));
-        transition(States.RUNNING,       this.events.GET_REQUEST_RECEIVED, States.RUNNING,        (data) => _this.processGetRequest(data));
+        transition(States.RUNNING,       this.events.STOP_REQUESTED,           States.STOPPED,        (data) => _this.serverStop(data));
+        transition(States.RUNNING,       this.events.GET_HOMEPAGE_REQUESTED,   States.RUNNING,        (data) => _this.processGetHomepage(data));
+        transition(States.RUNNING,       this.events.GET_ABOUT_US_REQUESTED,   States.RUNNING,        (data) => _this.processGetAboutUs(data));
+        transition(States.RUNNING,       this.events.GET_WHAT_WE_DO_REQUESTED, States.RUNNING,        (data) => _this.processGetWhatWeDo(data));
+        transition(States.RUNNING,       this.events.GET_CONTACTS_REQUESTED,   States.RUNNING,        (data) => _this.processGetContacts(data));
+        transition(States.RUNNING,       this.events.GET_IMAGE_REQUESTED,      States.RUNNING,        (data) => _this.processGetImage(data));
 
         // transitions from STOPPED
-        transition(States.STOPPED,       this.events.START_REQUESTED,      States.RUNNING,        (data) => _this.serverStart(data));
-        transition(States.STOPPED,       this.events.DEINIT_REQUESTED,     States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
+        transition(States.STOPPED,       this.events.START_REQUESTED,          States.RUNNING,        (data) => _this.serverStart(data));
+        transition(States.STOPPED,       this.events.DEINIT_REQUESTED,         States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
     }
 
     // </editor-fold>
@@ -134,7 +137,7 @@ class GServer
             else
                 event = this.events.DATABASE_CONN_ERR;
 
-            const eventData = {event: event, eventData: {err: err, cb : data.cb}};
+            const eventData = {event: event, eventData: {dbErr: err, cb : data.cb}};
             this.eventsManager.raiseEvent(event, eventData);
         });
     }
@@ -169,7 +172,7 @@ class GServer
 
     returnInitResult(data)
     {
-        if (data.err == null)
+        if (data.dbErr == null)
         {
             // database connection ok
             data.cb(false);
@@ -181,10 +184,33 @@ class GServer
         }
     }
 
-    processGetRequest(data)
+    processGetHomepage(data)
     {
-        console.log(`${data.uri}`);
-        data.res.send(data.uri);
+        data.res.send(data.req.method + ' ' + data.req.originalUrl);
+        // TODO: processGetHomepage: implement
+    }
+    processGetAboutUs(data)
+    {
+        data.res.send(data.req.method + ' ' + data.req.originalUrl);
+        // TODO: processGetAboutUs: implement
+    }
+
+    processGetWhatWeDo(data)
+    {
+        data.res.send(data.req.method + ' ' + data.req.originalUrl);
+        // TODO: processGetWhatWeDo: implement
+    }
+
+    processGetContacts(data)
+    {
+        data.res.send(data.req.method + ' ' + data.req.originalUrl);
+        // TODO: processGetContacts: implement
+    }
+
+    processGetImage(data)
+    {
+        data.res.send(`Image requested: ${data.req.params.id}`);
+        // TODO: processGetImage: implement
     }
 
     // </editor-fold>
@@ -224,48 +250,32 @@ class GServer
 
     registerRequests()
     {
-        let requestTypes = GRequests.requestTypes;
-        let requests     = GRequests.requests;
+        let requests = GRequests.requests;
 
         let _this = this;
 
-        let getReqHandler = function(event, uri)
+        // register middleware
+        this.app.use(function (req, res, next)
         {
-            return function (req, res)
+            for (let _req in requests)
             {
-                const eventData = {event: event, eventData: {req: req, res: res, uri: uri}};
-
-                _this.eventsManager.raiseEvent(event, eventData)
-            };
-        };
-
-        for (let req in requests)
-        {
-            if (requests.hasOwnProperty(req))
-            {
-                switch (requests[req].type)
+                // TODO: need fixes
+                if (requests.hasOwnProperty(_req))
                 {
-                    case requestTypes.GET:
-                        let getHandler = getReqHandler(this.events.GET_REQUEST_RECEIVED, requests[req].uri);
-                        this.app.get(requests[req].uri, (req, res) => getHandler(req, res));
-                        break;
-                    case requestTypes.POST:
-                        let postHandler = getReqHandler(this.events.POST_REQUEST_RECEIVED, requests[req].uri);
-                        this.app.post(requests[req].uri, (req, res) => postHandler(req, res));
-                        break;
-                    case requestTypes.PUT:
-                        let putHandler = getReqHandler(this.events.PUT_REQUEST_RECEIVED, requests[req].uri);
-                        this.app.put(requests[req].uri, (req, res) => putHandler(req, res));
-                        break;
-                    case requestTypes.DELETE:
-                        let delHandler = getReqHandler(this.events.DELETE_REQUEST_RECEIVED, requests[req].uri);
-                        this.app.delete(requests[req].uri, (req, res) => delHandler(req, res));
-                        break;
-                    default:
-                        console.log(`Unsupported request type: ${requests[req].type}`);
+                    if ((requests[_req].url  === req.originalUrl)
+                    &&  (requests[_req].type === req.method))
+                    {
+                        const event = requests[_req].event;
+                        const eventData = {event: event, eventData: {req: req, res: res}};
+                        _this.eventsManager.raiseEvent(event, eventData);
+                    }
                 }
             }
-        }
+
+            next();
+        });
+
+        // TODO: register default ' 404 not found' response to other requests
     }
 
     // </editor-fold>
