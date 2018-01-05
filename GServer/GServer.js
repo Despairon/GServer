@@ -78,22 +78,28 @@ class GServer
     {
         // TODO: fillTransitions: complete implementation
         let _this = this;
-                                            /* current state              event                    next state                      callback       */
+
+        let transition = function(currState, event, nextState, cb)
+        {
+            _this.stateMachine.addTransition(currState, event, nextState, cb);
+        };
 
         // transitions from UNINITIALIZED
-        this.stateMachine.addTransition(States.UNINITIALIZED, this.events.INIT_REQUESTED,   States.INITIALIZED,    (data) => _this.serverInit(data));
+        transition(States.UNINITIALIZED, this.events.INIT_REQUESTED,       States.UNINITIALIZED,  (data) => _this.serverInit(data));
+        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_OK,     States.INITIALIZED,    (data) => _this.returnInitResult(data));
+        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_ERR,    States.UNINITIALIZED,  (data) => _this.returnInitResult(data));
 
         // transitions from INITIALIZED
-        this.stateMachine.addTransition(States.INITIALIZED,   this.events.START_REQUESTED,  States.RUNNING,        (data) => _this.serverStart(data));
-        this.stateMachine.addTransition(States.INITIALIZED,   this.events.DEINIT_REQUESTED, States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
+        transition(States.INITIALIZED,   this.events.START_REQUESTED,      States.RUNNING,        (data) => _this.serverStart(data));
+        transition(States.INITIALIZED,   this.events.DEINIT_REQUESTED,     States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
 
         // transitions from RUNNING
-        this.stateMachine.addTransition(States.RUNNING,       this.events.STOP_REQUESTED,       States.STOPPED,    (data) => _this.serverStop(data));
-        this.stateMachine.addTransition(States.RUNNING,       this.events.GET_REQUEST_RECEIVED, States.RUNNING,    (data) => _this.processGetRequest(data));
+        transition(States.RUNNING,       this.events.STOP_REQUESTED,       States.STOPPED,        (data) => _this.serverStop(data));
+        transition(States.RUNNING,       this.events.GET_REQUEST_RECEIVED, States.RUNNING,        (data) => _this.processGetRequest(data));
 
         // transitions from STOPPED
-        this.stateMachine.addTransition(States.STOPPED,       this.events.START_REQUESTED,  States.RUNNING,        (data) => _this.serverStart(data));
-        this.stateMachine.addTransition(States.STOPPED,       this.events.DEINIT_REQUESTED, States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
+        transition(States.STOPPED,       this.events.START_REQUESTED,      States.RUNNING,        (data) => _this.serverStart(data));
+        transition(States.STOPPED,       this.events.DEINIT_REQUESTED,     States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
     }
 
     // </editor-fold>
@@ -102,8 +108,6 @@ class GServer
 
     serverInit(data)
     {
-        // TODO: fsm_serverInit: complete
-
         // set application
         this.app = data.app;
         // set configuration filename
@@ -124,20 +128,23 @@ class GServer
         this.db = GDataBase(this.config.dbName);
         this.db.connect( (err) =>
         {
+            let event = undefined;
             if (err == null)
-                data.cb(false);
+                event = this.events.DATABASE_CONN_OK;
             else
-                data.cb(true);
+                event = this.events.DATABASE_CONN_ERR;
+
+            const eventData = {event: event, eventData: {err: err, cb : data.cb}};
+            this.eventsManager.raiseEvent(event, eventData);
         });
     }
 
     serverStart(data)
     {
-        // TODO: fsm_serverStart: complete
         let srv = this.app.listen(this.config.port, () =>
         {
-            let host = srv.this.address().address;
-            let port = srv.this.address().port;
+            let host = srv.address().address;
+            let port = srv.address().port;
             console.log(`Server is started at http://${host}:${port}`);
         } );
 
@@ -160,9 +167,24 @@ class GServer
         data.cb(false);
     }
 
+    returnInitResult(data)
+    {
+        if (data.err == null)
+        {
+            // database connection ok
+            data.cb(false);
+        }
+        else
+        {
+            // database connection err
+            data.cb(true);
+        }
+    }
+
     processGetRequest(data)
     {
         console.log(`${data.uri}`);
+        data.res.send(data.uri);
     }
 
     // </editor-fold>
@@ -206,11 +228,15 @@ class GServer
         let requests     = GRequests.requests;
 
         let _this = this;
-        let requestHandler = (event, req, res, uri) =>
-        {
-            const eventData = {event: event, eventData: {req: req, res: res, uri: uri} };
 
-            _this.eventsManager.raiseEvent(event, eventData)
+        let getReqHandler = function(event, uri)
+        {
+            return function (req, res)
+            {
+                const eventData = {event: event, eventData: {req: req, res: res, uri: uri}};
+
+                _this.eventsManager.raiseEvent(event, eventData)
+            };
         };
 
         for (let req in requests)
@@ -220,16 +246,20 @@ class GServer
                 switch (requests[req].type)
                 {
                     case requestTypes.GET:
-                        this.app.get(requests[req].uri,    (req, res) => requestHandler(this.events.GET_REQUEST_RECEIVED, req, res, requests[req].uri));
+                        let getHandler = getReqHandler(this.events.GET_REQUEST_RECEIVED, requests[req].uri);
+                        this.app.get(requests[req].uri, (req, res) => getHandler(req, res));
                         break;
                     case requestTypes.POST:
-                        this.app.post(requests[req].uri,   (req, res) => requestHandler(this.events.POST_REQUEST_RECEIVED, req, res, requests[req].uri));
+                        let postHandler = getReqHandler(this.events.POST_REQUEST_RECEIVED, requests[req].uri);
+                        this.app.post(requests[req].uri, (req, res) => postHandler(req, res));
                         break;
                     case requestTypes.PUT:
-                        this.app.put(requests[req].uri,    (req, res) => requestHandler(this.events.PUT_REQUEST_RECEIVED, req, res, requests[req].uri));
+                        let putHandler = getReqHandler(this.events.PUT_REQUEST_RECEIVED, requests[req].uri);
+                        this.app.put(requests[req].uri, (req, res) => putHandler(req, res));
                         break;
                     case requestTypes.DELETE:
-                        this.app.delete(requests[req].uri, (req, res) => requestHandler(this.events.DELETE_REQUEST_RECEIVED, req, res, requests[req].uri));
+                        let delHandler = getReqHandler(this.events.DELETE_REQUEST_RECEIVED, requests[req].uri);
+                        this.app.delete(requests[req].uri, (req, res) => delHandler(req, res));
                         break;
                     default:
                         console.log(`Unsupported request type: ${requests[req].type}`);

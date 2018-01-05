@@ -9,15 +9,17 @@ const gEvents =
     START_REQUESTED:          'START_REQUESTED',
     STOP_REQUESTED:           'STOP_REQUESTED',
     DEINIT_REQUESTED:         'DEINIT_REQUESTED',
+    DATABASE_CONN_OK:         'DATABASE_CONN_OK',
+    DATABASE_CONN_ERR:        'DATABASE_CONN_ERR',
+    GET_REQUEST_RECEIVED:     'GET_REQUEST_RECEIVED',
+    POST_REQUEST_RECEIVED:    'POST_REQUEST_RECEIVED',
+    PUT_REQUEST_RECEIVED:     'PUT_REQUEST_RECEIVED',
+    DELETE_REQUEST_RECEIVED:  'DELETE_REQUEST_RECEIVED',
     GET_HOMEPAGE_REQUESTED:   'GET_HOMEPAGE_REQUESTED',
     GET_ABOUT_US_REQUESTED:   'GET_ABOUT_US_REQUESTED',
     GET_WHAT_WE_DO_REQUESTED: 'GET_WHAT_WE_DO_REQUESTED',
     GET_CONTACTS_REQUESTED:   'GET_CONTACTS_REQUESTED',
-    GET_IMAGE_REQUESTED:      'GET_IMAGE_REQUESTED',
-    GET_REQUEST_RECEIVED:     'GET_REQUEST_RECEIVED',
-    POST_REQUEST_RECEIVED:    'POST_REQUEST_RECEIVED',
-    PUT_REQUEST_RECEIVED:     'PUT_REQUEST_RECEIVED',
-    DELETE_REQUEST_RECEIVED:  'DELETE_REQUEST_RECEIVED'
+    GET_IMAGE_REQUESTED:      'GET_IMAGE_REQUESTED'
 };
 
 class GEventsManager extends EventEmitter
@@ -38,7 +40,11 @@ class GEventsManager extends EventEmitter
 
     raiseEvent(event, eventData)
     {
-        super.emit(event, eventData);
+        let _this = this;
+        process.nextTick( function()
+        {
+            _this.emit(event, eventData);
+        });
     }
 }
 
