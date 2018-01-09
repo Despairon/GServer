@@ -156,7 +156,7 @@ class GServer
 
     serverStop(data)
     {
-        // TODO: fsm_stop: complete
+        // TODO: serverStop: complete
 
         data.cb(false);
     }
@@ -165,7 +165,7 @@ class GServer
     {
         this.db.disconnect();
 
-        // TODO: fsm_deInit: complete
+        // TODO: serverDeinit: complete
 
         data.cb(false);
     }
@@ -252,15 +252,14 @@ class GServer
     {
         let requests = GRequests.requests;
 
-        let _this = this;
-
         for (let _req in requests)
         {
             if (requests.hasOwnProperty(_req))
             {
-                if (_this.app[requests[_req].type] !== void(0))
+                if (this.app[requests[_req].type] !== void(0))
                 {
-                    _this.app[requests[_req].type](requests[_req].url, (req, res) =>
+                    let _this = this;
+                    this.app[requests[_req].type](requests[_req].url, (req, res) =>
                     {
                         const event     = requests[_req].event;
                         const eventData = {event: event, eventData: {req: req, res: res}};
@@ -274,7 +273,17 @@ class GServer
             }
         }
 
-        // TODO: register default ' 404 not found' response to other requests
+        // register error handler
+        this.app.use(function(err, req, res, next) {
+            console.error(err.stack);
+            res.sendStatus(500);
+        });
+
+        // register default '404 not found' response
+        this.app.use(function(req, res)
+        {
+            res.sendStatus(404);
+        });
     }
 
     // </editor-fold>
