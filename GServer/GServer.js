@@ -27,8 +27,9 @@ class GServer
         this.events        = GEvents.gEvents;
         this.eventsManager = GEvents.GEventsManager();
 
-        this.db  = null;
-        this.app = null;
+        this.db     = null;
+        this.app    = null;
+        this.server = null;
 
         this.registerEvents();
 
@@ -84,25 +85,26 @@ class GServer
         };
 
         // transitions from UNINITIALIZED
-        transition(States.UNINITIALIZED, this.events.INIT_REQUESTED,           States.UNINITIALIZED,  (data) => _this.serverInit(data));
-        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_OK,         States.INITIALIZED,    (data) => _this.returnInitResult(data));
-        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_ERR,        States.UNINITIALIZED,  (data) => _this.returnInitResult(data));
+        transition(States.UNINITIALIZED, this.events.INIT_REQUESTED,             States.UNINITIALIZED,  (data) => _this.serverInit(data));
+        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_OK,           States.INITIALIZED,    (data) => _this.returnInitResult(data));
+        transition(States.UNINITIALIZED, this.events.DATABASE_CONN_ERR,          States.UNINITIALIZED,  (data) => _this.returnInitResult(data));
 
         // transitions from INITIALIZED
-        transition(States.INITIALIZED,   this.events.START_REQUESTED,          States.RUNNING,        (data) => _this.serverStart(data));
-        transition(States.INITIALIZED,   this.events.DEINIT_REQUESTED,         States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
+        transition(States.INITIALIZED,   this.events.START_REQUESTED,            States.RUNNING,        (data) => _this.serverStart(data));
+        transition(States.INITIALIZED,   this.events.DEINIT_REQUESTED,           States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
 
         // transitions from RUNNING
-        transition(States.RUNNING,       this.events.STOP_REQUESTED,           States.STOPPED,        (data) => _this.serverStop(data));
-        transition(States.RUNNING,       this.events.GET_HOMEPAGE_REQUESTED,   States.RUNNING,        (data) => _this.processGetHomepage(data));
-        transition(States.RUNNING,       this.events.GET_ABOUT_US_REQUESTED,   States.RUNNING,        (data) => _this.processGetAboutUs(data));
-        transition(States.RUNNING,       this.events.GET_WHAT_WE_DO_REQUESTED, States.RUNNING,        (data) => _this.processGetWhatWeDo(data));
-        transition(States.RUNNING,       this.events.GET_CONTACTS_REQUESTED,   States.RUNNING,        (data) => _this.processGetContacts(data));
-        transition(States.RUNNING,       this.events.GET_IMAGE_REQUESTED,      States.RUNNING,        (data) => _this.processGetImage(data));
+        transition(States.RUNNING,       this.events.STOP_REQUESTED,             States.STOPPED,        (data) => _this.serverStop(data));
+        transition(States.RUNNING,       this.events.GET_HOMEPAGE_REQUESTED,     States.RUNNING,        (data) => _this.processGetHomepage(data));
+        transition(States.RUNNING,       this.events.GET_ABOUT_US_REQUESTED,     States.RUNNING,        (data) => _this.processGetAboutUs(data));
+        transition(States.RUNNING,       this.events.GET_OUR_SERVICES_REQUESTED, States.RUNNING,        (data) => _this.processGetOurServices(data));
+        transition(States.RUNNING,       this.events.GET_OUR_PROCESS_REQUESTED,  States.RUNNING,        (data) => _this.processGetOurProcess(data));
+        transition(States.RUNNING,       this.events.GET_CONTACTS_REQUESTED,     States.RUNNING,        (data) => _this.processGetContacts(data));
+        transition(States.RUNNING,       this.events.GET_IMAGE_REQUESTED,        States.RUNNING,        (data) => _this.processGetImage(data));
 
         // transitions from STOPPED
-        transition(States.STOPPED,       this.events.START_REQUESTED,          States.RUNNING,        (data) => _this.serverStart(data));
-        transition(States.STOPPED,       this.events.DEINIT_REQUESTED,         States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
+        transition(States.STOPPED,       this.events.START_REQUESTED,            States.RUNNING,        (data) => _this.serverStart(data));
+        transition(States.STOPPED,       this.events.DEINIT_REQUESTED,           States.UNINITIALIZED,  (data) => _this.serverDeinit(data));
     }
 
     // </editor-fold>
@@ -111,6 +113,8 @@ class GServer
 
     serverInit(data)
     {
+        console.log('Server initialization started...');
+
         // set application
         this.app = data.app;
         // set configuration filename
@@ -129,7 +133,7 @@ class GServer
 
         // initialize database
         this.db = GDataBase(this.config.dbName);
-        this.db.connect( (err) =>
+        this.db.connect(this.config.dbPort, (err) =>
         {
             let event = undefined;
             if (err == null)
@@ -144,28 +148,34 @@ class GServer
 
     serverStart(data)
     {
-        let srv = this.app.listen(this.config.port, () =>
+        this.server = this.app.listen(this.config.port, this.config.ip, () =>
         {
-            let host = srv.address().address;
-            let port = srv.address().port;
+            let host = this.server.address().address;
+            let port = this.server.address().port;
             console.log(`Server is started at http://${host}:${port}`);
-        } );
 
-        data.cb(false);
+            data.cb(false);
+        } );
     }
 
     serverStop(data)
     {
-        // TODO: serverStop: complete
+        // stop listening on address
+        if (this.server != null)
+            this.server.close();
 
-        data.cb(false);
+        data.cb(this.server != null);
     }
 
     serverDeinit(data)
     {
+        // disconnect database
         this.db.disconnect();
 
-        // TODO: serverDeinit: complete
+        // deinitialize components
+        this.db     = null;
+        this.app    = null;
+        this.server = null;
 
         data.cb(false);
     }
@@ -186,25 +196,57 @@ class GServer
 
     processGetHomepage(data)
     {
-        data.res.send(data.req.method + ' ' + data.req.originalUrl);
-        // TODO: processGetHomepage: implement
-    }
-    processGetAboutUs(data)
-    {
-        data.res.send(data.req.method + ' ' + data.req.originalUrl);
-        // TODO: processGetAboutUs: implement
+        this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.HOMEPAGE_CONTENT, (doc) =>
+        {
+            if (doc !== void(0))
+                data.res.json(JSON.stringify(doc.homepageContent));
+            else
+                data.res.sendStatus(404);
+        });
     }
 
-    processGetWhatWeDo(data)
+    processGetAboutUs(data)
     {
-        data.res.send(data.req.method + ' ' + data.req.originalUrl);
-        // TODO: processGetWhatWeDo: implement
+        this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.ABOUT_US_CONTENT, (doc) =>
+        {
+            if (doc !== void(0))
+                data.res.json(JSON.stringify(doc.aboutUsContent));
+            else
+                data.res.sendStatus(404);
+        });
+    }
+
+    processGetOurServices(data)
+    {
+        this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.OUR_SERVICES_CONTENT, (doc) =>
+        {
+            if (doc !== void(0))
+                data.res.json(JSON.stringify(doc.ourServicesContent));
+            else
+                data.res.sendStatus(404);
+        });
+    }
+
+    processGetOurProcess(data)
+    {
+        this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.OUR_PROCESS_CONTENT, (doc) =>
+        {
+            if (doc !== void(0))
+                data.res.json(JSON.stringify(doc.ourProcessContent));
+            else
+                data.res.sendStatus(404);
+        });
     }
 
     processGetContacts(data)
     {
-        data.res.send(data.req.method + ' ' + data.req.originalUrl);
-        // TODO: processGetContacts: implement
+        this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.CONTACTS_CONTENT, (doc) =>
+        {
+            if (doc !== void(0))
+                data.res.json(JSON.stringify(doc.contactsContent));
+            else
+                data.res.sendStatus(404);
+        });
     }
 
     processGetImage(data)
@@ -215,7 +257,7 @@ class GServer
 
     // </editor-fold>
 
-    // <editor-fold desc="Miscellanous functions">
+    // <editor-fold desc="Miscellaneous functions">
 
     readJsonFile(fileName)
     {
@@ -241,8 +283,10 @@ class GServer
     {
         let cfg =
         {
+            ip     : "127.0.0.1",
             port   : 8081,
-            dbName : "GDataBase"
+            dbName : "GDataBase",
+            dbPort : 27017
         };
 
         return cfg;

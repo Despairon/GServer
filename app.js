@@ -13,6 +13,8 @@ app.use(bodyParser.json());
 let serverModule = require(SERVER_MODULE);
 let serverApp    = serverModule.server;
 
+// TODO: wrap everything in try catch
+
 serverApp.init(app, CFG_FILENAME, (initError) =>
 {
     if (!initError)
@@ -29,6 +31,10 @@ serverApp.init(app, CFG_FILENAME, (initError) =>
                         console.log('Critical failure.');
                     }
                 })
+            }
+            else
+            {
+                console.log('Server is running');
             }
         })
     }
