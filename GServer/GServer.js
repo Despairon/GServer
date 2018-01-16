@@ -2,11 +2,13 @@ const REQUESTS_MODULE       = './grequests';
 const DATABASE_MODULE       = './gdatabase';
 const EVENTS_MODULE         = './gevents';
 const STATE_MACHINE_MODULE  = './statemachine';
+const PATH_MODULE           = 'path';
 
 const StateMachine  = require(STATE_MACHINE_MODULE);
 const GRequests     = require(REQUESTS_MODULE);
 const GDataBase     = require(DATABASE_MODULE);
 const GEvents       = require(EVENTS_MODULE);
+const path          = require(PATH_MODULE);
 
 const States =
 {
@@ -251,8 +253,15 @@ class GServer
 
     processGetImage(data)
     {
-        data.res.send(`Image requested: ${data.req.query.id}`);
-        // TODO: processGetImage: implement
+        const img_doc = this.db.documents.IMAGE+data.req.query.id;
+
+        this.db.getValue(this.db.collections.IMAGES, img_doc, (img) =>
+        {
+            if (img !== void(0))
+                data.res.sendFile(path.join(__dirname, img.path));
+            else
+                data.res.sendStatus(404);
+        });
     }
 
     // </editor-fold>

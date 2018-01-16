@@ -27,6 +27,7 @@ class GDataBase
             CONTACTS_CONTENT:     'contactsContent',
             OUR_SERVICES_CONTENT: 'ourServicesContent',
             OUR_PROCESS_CONTENT:  'ourProcessContent',
+            IMAGE:                'img_'
         };
     };
 
