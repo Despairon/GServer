@@ -201,7 +201,7 @@ class GServer
         this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.HOMEPAGE_CONTENT, (doc) =>
         {
             if (doc !== void(0))
-                data.res.json(JSON.stringify(doc.homepageContent));
+                data.res.json(doc.homepageContent);
             else
                 data.res.sendStatus(404);
         });
@@ -212,7 +212,7 @@ class GServer
         this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.ABOUT_US_CONTENT, (doc) =>
         {
             if (doc !== void(0))
-                data.res.json(JSON.stringify(doc.aboutUsContent));
+                data.res.json(doc.aboutUsContent);
             else
                 data.res.sendStatus(404);
         });
@@ -223,7 +223,7 @@ class GServer
         this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.OUR_SERVICES_CONTENT, (doc) =>
         {
             if (doc !== void(0))
-                data.res.json(JSON.stringify(doc.ourServicesContent));
+                data.res.json(doc.ourServicesContent);
             else
                 data.res.sendStatus(404);
         });
@@ -234,7 +234,7 @@ class GServer
         this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.OUR_PROCESS_CONTENT, (doc) =>
         {
             if (doc !== void(0))
-                data.res.json(JSON.stringify(doc.ourProcessContent));
+                data.res.json(doc.ourProcessContent);
             else
                 data.res.sendStatus(404);
         });
@@ -245,7 +245,7 @@ class GServer
         this.db.getValue(this.db.collections.TEXT_CONTENT, this.db.documents.CONTACTS_CONTENT, (doc) =>
         {
             if (doc !== void(0))
-                data.res.json(JSON.stringify(doc.contactsContent));
+                data.res.json(doc.contactsContent);
             else
                 data.res.sendStatus(404);
         });
